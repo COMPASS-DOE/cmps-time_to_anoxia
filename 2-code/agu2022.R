@@ -16,7 +16,7 @@ optode_combined2 =
   mutate(transect = factor(transect, levels = c("upland", "transition", "wetland"))) %>% 
   arrange(sample_name, time_minutes) %>% 
   group_by(sample_name) %>% 
-  mutate(do_rolling = zoo::rollmean(corrected_do_mg_L, k = 7, fill = NA)) %>% 
+  mutate(do_rolling = zoo::rollmean(DO_corrected_mgL, k = 7, fill = NA)) %>% 
   arrange(desc(do_rolling)) %>% 
   # change in slope
   # calculate the differential as well as the double differential
