@@ -84,6 +84,91 @@ gg_optode_a =
   facet_grid(. ~ transect)+
   theme(legend.position = "none")  
 
+#
+optode_combined2 %>% 
+  filter(!grepl("skip", notes)) %>% 
+  filter(!is.na(location)) %>% 
+  filter(location != "water") %>% 
+  filter(timepoint == c("24-hour")) %>% 
+  # filter(timepoint == c("24-hour", "2-week-rep")) %>% 
+  filter(horizon == "A") %>% 
+  ggplot(aes(x = time_minutes/60, y = do_rolling, color = horizon, group = sample_name))+
+  geom_line()+
+  geom_hline(yintercept = 8.3, linetype = "dashed")+
+  scale_color_manual(values = pal_horizons_agu)+
+  labs(#title = "Time to Anoxia",
+    x = "Elapsed time, hours",
+    y = "Dissolved oxygen, mg/L")+
+  ylim(0,10)+
+  facet_grid(. ~ transect)+
+  theme(legend.position = "none")  
+# save 1100 x 400
+
+# wetland only
+optode_combined2 %>% 
+  filter(!grepl("skip", notes)) %>% 
+  filter(!is.na(location)) %>% 
+  filter(location != "water") %>% 
+  filter(timepoint == c("24-hour")) %>% 
+  # filter(timepoint == c("24-hour", "2-week-rep")) %>% 
+  filter(horizon == "A") %>% 
+  filter(transect == "wetland") %>% 
+  ggplot(aes(x = time_minutes/60, y = do_rolling, color = horizon, group = sample_name))+
+  geom_line()+
+  scale_color_manual(values = pal_horizons_agu)+
+  labs(#title = "Time to Anoxia",
+    x = "Elapsed time, hours",
+    y = "Dissolved oxygen, mg/L")+
+  ylim(0,5)+
+  facet_grid(. ~ transect)+
+  theme(legend.position = "none")  +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size=16, face="bold")
+  )+
+  NULL
+
+# LOESS
+optode_combined2 %>% 
+  filter(!grepl("skip", notes)) %>% 
+  filter(!is.na(location)) %>% 
+  filter(location != "water") %>% 
+  filter(timepoint == c("24-hour")) %>% 
+  # filter(timepoint == c("24-hour", "2-week-rep")) %>% 
+  filter(horizon == "A") %>% 
+  ggplot(aes(x = time_minutes/60, y = do_rolling, color = horizon))+
+  geom_line(aes(group = sample_name), color = "grey")+
+  geom_smooth(size = 1.5)+
+  geom_hline(yintercept = 8.1, linetype = "dashed")+
+  scale_color_manual(values = pal_horizons_agu)+
+  labs(#title = "Time to Anoxia",
+    x = "Elapsed time, hours",
+    y = "Dissolved oxygen, mg/L")+
+  ylim(0,10)+
+  facet_grid(. ~ transect)+
+  theme(legend.position = "none")  
+
+# means
+optode_combined2 %>% 
+  filter(!grepl("skip", notes)) %>% 
+  filter(!is.na(location)) %>% 
+  filter(location != "water") %>% 
+  filter(timepoint == c("24-hour")) %>% 
+  # filter(timepoint == c("24-hour", "2-week-rep")) %>% 
+  filter(horizon == "A") %>% 
+  group_by(transect, horizon, time_minutes) %>% 
+  dplyr::summarise(DO_mean = mean(do_rolling)) %>% 
+  ggplot(aes(x = time_minutes/60, y = DO_mean, color = horizon))+
+  geom_smooth()+
+  scale_color_manual(values = pal_horizons_agu)+
+  labs(#title = "Time to Anoxia",
+    x = "Elapsed time, hours",
+    y = "Dissolved oxygen, mg/L")+
+  ylim(0,10)+
+  facet_grid(. ~ transect)+
+  theme(legend.position = "none")  
+
+
 gg_optode_a_arrows = 
   gg_optode_a +
   geom_segment(data = optode_do_summary,
