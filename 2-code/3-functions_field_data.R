@@ -34,7 +34,65 @@ troll_processed %>%
   facet_wrap(~location, scales = "free")
 
 
+troll_processed %>% 
+  mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
+  ggplot(aes(x = hours, y = do_mgl,
+             color = interaction(peak, location),
+             ))+
+  geom_line(size = 1,
+            show.legend = F)+
+  labs(x = "Hours",
+       y = "Dissolved Oxygen, mg/L")+
+  scale_color_brewer(palette = "PuOr")+
+  facet_wrap(~location, nrow = 1)+
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size=16, face="bold")
+  )+
+  NULL
+# save: 550l * 1100w
 
+troll_processed %>% 
+  mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
+  ggplot(aes(x = hours, y = do_mgl,
+             color = interaction(peak, location),
+  ))+
+  geom_line(size = 1,
+            show.legend = F)+
+  labs(x = "Hours",
+       y = "Dissolved Oxygen, mg/L")+
+  scale_color_brewer(palette = "PuOr")+
+  facet_wrap(~location, scales = "free", 
+             nrow = 1)+
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size=16, face="bold")
+  )+
+  NULL
+
+
+# just one event - WETLAND
+troll_processed %>% 
+  mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
+  filter(location == "Wetland" & peak == 1) %>% 
+  ggplot(aes(x = hours, y = do_mgl,
+             #color = interaction(peak, location),
+  ))+
+  geom_line(size = 1,
+            show.legend = F)+
+  labs(x = "Hours",
+       y = "Dissolved Oxygen, mg/L",
+       #title = "WETLAND"
+       )+
+  scale_color_brewer(palette = "PuOr")+
+  facet_wrap(~location, scales = "free", 
+             nrow = 2)+
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size=16, face="bold")
+  )+
+  NULL
+# save 500l * 550w
 
 troll_processed %>% 
   ggplot(aes(x = hours, y = do_mgl,
@@ -47,6 +105,21 @@ troll_processed %>%
        y = "Dissolved oxygen, mg/L",
        color = "")+
   facet_wrap(~peak, scales = "free_x")
+
+
+
+
+troll_processed %>% 
+  ggplot(aes(x = hours, y = do_mgl,
+             color = as.character(peak)))+
+  geom_line(size = 1)+
+#  scale_color_manual(breaks = c("TR", "WC"),
+#                     labels = c("transition", "wetland"),
+#                     values = c("red", "blue"))+
+  labs(x = "Hours",
+       y = "Dissolved oxygen, mg/L",
+       color = "")+
+  facet_wrap(~location, scales = "free_x")
 
 
 
