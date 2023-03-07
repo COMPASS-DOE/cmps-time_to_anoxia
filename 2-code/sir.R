@@ -40,3 +40,22 @@ sir_data_processed %>%
   ggplot(aes(y = CO2_diff, x = glucose_conc_uM))+
   geom_point()+
   facet_wrap(~type, scales = "free")
+
+# calculate microbial biomass from calibration curves
+
+# PV=nRT
+mmol_air = ((1*40)/(82.05*(25+273)))*1000
+
+
+sir_data_biomass = 
+  sir_data_processed %>% 
+  group_by(type) %>% 
+  dplyr::summarise(CO2_ppm = max(respiration_g)) %>% 
+  ungroup() %>% 
+  mutate(CO2_percent = CO2_ppm / 10000,
+         CO2_mL = CO2_percent * 40,
+         CO2_mL_100g = CO2_mL * 100,
+         #CO2_mL = (CO2_ppm_g/1000000) * 40,
+         biomass_mg_100g = (40.04 * CO2_mL_100g) + 0.37,
+         biomass_ug_100g = biomass_mg_100g/1000)
+# gives: transition 
