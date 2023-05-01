@@ -136,12 +136,65 @@ plot_optode_data = function(optode_data_processed){
     theme(legend.position = c(0.5,0.5))  +
     NULL
   
-  cowplot::plot_grid(gg_24hr + ggtitle("A: 24-hour"), gg_2wk + ggtitle("B: 2-week\n\n"), 
+  version1 = cowplot::plot_grid(gg_24hr + ggtitle("A: 24-hour"), gg_2wk + ggtitle("B: 2-week\n\n"), 
                      rel_widths = c(2.7,1),
                      label_y = 1,
                      label_x = 0)
   
   
+  
+  version2_gg_24hr = 
+    optode_combined2 %>% 
+    filter(!grepl("skip", notes)) %>% 
+    filter(!is.na(location)) %>% 
+    filter(location != "water") %>% 
+    filter(timepoint == c("24-hour")) %>% 
+    filter(timepoint == c("24-hour", "2-week-rep")) %>% 
+    ggplot(aes(x = time_minutes/60, y = DO_rolling_mgL, color = horizon, group = sample_name))+
+    geom_line()+
+    geom_hline(yintercept = 8.5, linetype = "dashed")+
+    scale_color_manual(values = pal_horizons)+
+    labs(#title = "Time to Anoxia",
+      x = "Elapsed time, hours",
+      y = "Dissolved oxygen, mg/L")+
+    #geom_smooth(se = F)+
+    facet_grid(. ~ transect)+
+    theme(legend.position = "none") +
+    NULL
+  
+  version2_gg_2wk = 
+    optode_combined2 %>% 
+    filter(!grepl("skip", notes)) %>% 
+    filter(!is.na(location)) %>% 
+    filter(location != "water") %>% 
+    filter(grepl("upland", location)) %>% 
+    filter(timepoint == c("2-week-rep")) %>% 
+    ggplot(aes(x = (time_minutes/60)/24, y = DO_rolling_mgL, color = horizon, group = location))+
+    #    geom_line(size = 1)+
+    geom_point()+
+    geom_hline(yintercept = 8.5, linetype = "dashed")+
+    ylim(0,10)+
+    scale_color_manual(values = pal_horizons)+
+    labs(#title = "Time to Anoxia",
+      x = "Elapsed time, days",
+      y = "Dissolved oxygen, mg/L")+
+    theme(legend.position = "right")  +
+    NULL
+  
+  version2 = cowplot::plot_grid(version2_gg_24hr + ggtitle("A: 24-hour"), 
+                                version2_gg_2wk + ggtitle("B: 2-week (upland only) \n"), 
+                     rel_widths = c(2.7,1.5),
+                     label_y = 1,
+                     label_x = 0)
+  
+  list(version1 = version1,
+       version2 = version2)
+  
+}
+
+plot_optode_data_v2 = function(optode_data_processed){
+  
+
   
 }
 
