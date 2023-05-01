@@ -19,15 +19,20 @@ sir_data_processed =
 
 
 sir_data_processed %>% 
-  ggplot(aes(x = glucose_ug_g/1000, y = respiration_g, color = type))+
-  geom_point(size = 3)+ 
+  ggplot(aes(x = glucose_ug_g/1000, y = respiration_g, color = type, fill = type))+
+#  geom_point(size = 3)+ 
   geom_line(size = 1)+
-  labs(title = "Substrate-induced respiration",
+  geom_point(size = 5, shape = 21, stroke = 1, color = "white")+
+  scale_color_manual(values = soilpalettes::soil_palette("podzol", 5))+
+  scale_fill_manual(values = soilpalettes::soil_palette("podzol", 5))+
+  annotate("text", label = "Transition, A horizon", x = 16, y = 850, size = 5)+
+  annotate("text", label = "Upland, A horizon", x = 8, y = 550, size = 5)+
+  annotate("text", label = "Upland, B horizon", x = 5, y = 150, size = 5)+
+  labs(title = "SIR calibration curve \n",
        x = "Glucose added, mg/g soil",
-       y = "CO2 produced, ppm/g-hr")+
-  theme_bw()
-
-
+       y = expression(bold("CO"[2] * " produced, ppm/g-hr")))+
+  theme_kp()+
+  theme(legend.position = "none")
 
 
 
