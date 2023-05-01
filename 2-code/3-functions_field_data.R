@@ -8,16 +8,9 @@ process_troll = function(troll_data){
 
 plot_troll = function(troll_processed){
   
-  
-  troll_processed %>% 
-    ggplot(aes(x = hours, y = do_mgl,
-               color = as.character(peak)))+
-    geom_line(size = 1)+
-    facet_wrap(~location, scales = "free")
-  
-  
   # same x-axis
-  troll_processed %>% 
+  gg_do_same_x = 
+    troll_processed %>% 
     mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
     ggplot(aes(x = hours, y = do_mgl,
                color = interaction(peak, location),
@@ -36,7 +29,8 @@ plot_troll = function(troll_processed){
   # save: 550l * 1100w
   
   # different x-axis
-  gg_do = troll_processed %>% 
+  gg_do = 
+    troll_processed %>% 
     mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
     ggplot(aes(x = hours, y = do_mgl,
                color = interaction(peak, location),
@@ -56,7 +50,8 @@ plot_troll = function(troll_processed){
   
   
   # just one event - WETLAND
-  troll_processed %>% 
+  gg_do_wetland_one_event = 
+    troll_processed %>% 
     mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
     filter(location == "Wetland" & peak == 1) %>% 
     ggplot(aes(x = hours, y = do_mgl,
@@ -80,7 +75,8 @@ plot_troll = function(troll_processed){
   
   
   # ORP different x-axis
-  gg_orp = troll_processed %>% 
+  gg_orp = 
+    troll_processed %>% 
     mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
     ggplot(aes(x = hours, y = p_h_orp,
                color = interaction(peak, location),
@@ -99,22 +95,32 @@ plot_troll = function(troll_processed){
     NULL
   
   library(patchwork)
-  gg_do / gg_orp + plot_annotation(title = "Field data from Aqua TROLLS")
+  gg_combined = 
+  #  gg_do / gg_orp + plot_annotation(title = "Field data from Aqua TROLLS")
+  cowplot::plot_grid(gg_do, gg_orp, nrow = 2)
   
   
-  troll_processed %>% 
+
+  # dual axes
+  gg_combined_dual_axis = 
+    troll_processed %>% 
     mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
     ggplot(aes(x = hours))+
-    geom_line(aes(y = do_mgl), color = "red")+
-    geom_line(aes(y = p_h_orp/25), color = "blue")+
     facet_wrap(~location + peak, nrow = 2, scales = "free_x")+
-    scale_y_continuous(sec.axis = sec_axis(~.*25, name = "Redox Potential (blue)"),
+    geom_line(aes(y = do_mgl), color = "red")+
+    geom_line(aes(y = (p_h_orp+250)/50), color = "blue")+
+    scale_y_continuous(sec.axis = sec_axis(~(.*50)-250, name = "Redox Potential (blue)"),
                        name = "Dissolved oxygen, mg/L (red)")+
     labs(title = "Field data from Aqua TROLLS")
+ 
   
+    # y = tibble(x = c(0, 10),
+    #            y = c(-250, 250))
+    # 
+    # lm(y~x, data = y)
 }
 
-compute_rates = function(){
+compute_rates = function(troll_processed){
   
   
   troll_rates = 
