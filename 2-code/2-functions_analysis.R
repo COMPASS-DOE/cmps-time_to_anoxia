@@ -417,3 +417,332 @@ plot_pH = function(pH_processed, sample_key){
          y = "pH")  
   
 }
+
+
+# map ----
+
+make_map = function(){
+  
+  library(sf)
+  ## Set CRS
+  common_crs <- 4326
+  
+  ## Set map size and point size
+  point_size <- 2
+  map_width = 9
+  map_height = 6
+  
+  ## Set regional and WLE/CB (inset) bounding boxes
+  us_bbox <- c(xmin = -125, xmax = -60, ymin = 20, ymax = 50)
+  region_bbox <- c(xmin = -95, xmax = -60, ymin = 35, ymax = 50)
+  cb_bbox <- c(xmin = -77.8, xmax = -74.5, ymin = 36.8, ymax = 40.5)
+  wle_bbox <- c(xmin = -85, xmax = -79, ymin = 38, ymax = 44)
+  
+  ## Make US states map cropped to GL/CB region
+  us <- 
+    read_sf("cb_2018_us_state_5m/cb_2018_us_state_5m.shp") %>% 
+    st_transform(., crs = common_crs) %>% 
+    st_crop(., y = us_bbox)
+  
+  region <- st_crop(us, y = region_bbox)
+  
+  ## Further crop states to WLE/CB region
+  cb_states <- st_crop(region, y = cb_bbox)
+  wle_states <- st_crop(region, y = wle_bbox)
+  
+  ## Get state labels
+  st_labels = st_centroid(us) %>% 
+    filter(!STUSPS %in% c("TN", "NC", "DC")) # remove state labels that mess with the graph
+  
+  ## Make the base map with all sites
+  base_plot <- 
+    ggplot() + 
+    geom_sf(data = region) + 
+    geom_sf_text(data = st_labels, aes(label = STUSPS))+
+    geom_rect(aes(xmin = -85, xmax = -79, ymin = 38, ymax = 44), 
+              fill = NA, color = "black", lwd = 0.75) +
+    geom_segment(aes(x = -85, xend = -75.5, y = 38, yend = 34.3), 
+                 color = "black", lwd = 0.75) + 
+    geom_segment(aes(x = -79, xend = -67.8, y = 44, yend = 42.5), 
+                 color = "black", lwd = 0.75) + 
+    xlim(-90, -67)+
+    ylim(34.3, 49)+
+    # cowplot::theme_map() + 
+    theme(legend.background = element_rect(fill = alpha("white", 0.0)), 
+          legend.key = element_rect(fill = "transparent"), 
+          legend.position = c(0.85, 0.1)) + 
+    labs(x = "", y = "")+
+    NULL
+  
+  ## Make the inset map with just WLE sites
+  inset_plot <- 
+    ggplot() + 
+    geom_sf(data = wle_states) + 
+    geom_point(aes(x = -82.3025, y = 41.22), size = 5, color = "red")+
+    geom_text(aes(x = -82.3025, y = 40.9), label = "Old Woman Creek", size = 4)+
+    geom_text(aes(x = -81.5, y = 42.5), label = "Lake Erie", size = 4)+
+    cowplot::theme_map() + 
+    theme(legend.position = "none",
+          panel.background = element_rect(fill = "white", colour = "black", size = 1),
+          axis.text = element_blank()) 
+  
+  ## Combine into single figure
+  base_plot + 
+    annotation_custom(
+      ggplotGrob(inset_plot), 
+      xmin = -76, xmax = -67, ymin = 28, ymax = 48.8)+
+    theme_kp()
+  
+  
+  
+}
+make_map_OLD = function(DAT, VAR, COLOR_LEGEND){
+  
+  
+  # version 1 ----
+  
+  library(sf)
+  
+  ## Set CRS
+  common_crs <- 4326
+  
+  ## Set map size and point size
+  point_size <- 2
+  map_width = 9
+  map_height = 6
+  
+  # Set up map layers for plotting
+  
+  ## Set regional and CB (inset) bounding boxes
+  us_bbox <- c(xmin = -125, xmax = -60, ymin = 20, ymax = 50)
+  region_bbox <- c(xmin = -87, xmax = -78, ymin = 40, ymax = 44)
+  
+  ## Make US states map cropped to GL/CB region
+  us <- read_sf("cb_2018_us_state_5m/cb_2018_us_state_5m.shp") %>% 
+    st_transform(., crs = common_crs) %>% 
+    st_crop(., y = us_bbox)
+  
+  region <- st_crop(us, y = region_bbox)
+  
+  #  # make a dataset merging metadata with site lat-longs
+  #  df_map <- inner_join(DAT, latlong, by = "kit_id") %>% 
+  #    st_as_sf(., coords = c("long", "lat"), crs = common_crs)
+  
+  
+  ## Make the base map with all sites
+  #  base_plot <- 
+  ggplot() + 
+    geom_sf(data = region) + 
+    #geom_sf(data = meta_map, size = point_size * 3, color = "white") +
+    # geom_sf(data = df_map, 
+    #         color = "white", size = point_size * 2.5) + 
+    # geom_sf(data = df_map, 
+    #         aes_string(color = VAR), 
+    #         size = point_size * 2) + 
+    #    geom_rect(aes(xmin = -77.8, xmax = -74.5, ymin = 36.8, ymax = 40.5), 
+    #              fill = NA, color = "black", lwd = 0.75) +
+    #    geom_segment(aes(x = -77.8, xend = -76, y = 40.5, yend = 42), 
+    #                 color = "black", lwd = 0.75) + 
+    #    geom_segment(aes(x = -74.5, xend = -71, y = 40.5, yend = 41.5), 
+  #                 color = "black", lwd = 0.75) + 
+  # theme_map() + 
+  theme(legend.background = element_rect(fill = alpha("white", 0.0)), 
+        legend.key = element_rect(fill = "transparent"), 
+        legend.position = c(0.85, 0.1)) + 
+    # scale_color_viridis_c(limits = c(var_min, var_max)) + 
+    #  labs(x = "", y = "" , color = COLOR_LEGEND) + 
+    NULL
+  
+  
+  # version 2 ----
+  library(maps)
+  
+  states    <- c('New York', 'Pennsylvania',  'Indiana', 'Michigan', 'Ohio')
+  us.states <- map_data("state", region=states)
+  
+  #longitudes <- c(-75.5, -75.2, -76.5, -77.7, -78.5, -79.4, -81.0, -83.5, -86.0)
+  #latitudes <- c(23.2, 23.0, 24.0, 25.0, 25.7, 26.0, 26.3, 26.5, 27.5)
+  #hurricane_rows <- data.frame(longitudes, latitudes)
+  ggplot(data=us.states,aes(x=long,y=lat,group=group)) +
+    geom_path() +
+    coord_map() +
+    xlim(-88, -77) +
+    ylim(38, 44.5)+
+    geom_point(aes(x = -82.3025, y = 41.2234), color="blue", size=4)+
+    theme_bw()
+  
+  
+  # version 3 ----
+  library(usmap) #import the package
+  
+  plot_usmap(include = c('New York', 'Pennsylvania',  'Indiana', 'Michigan', 'Ohio'), labels = TRUE)+
+    geom_point(aes(x = -82.3025, y = 41.22))
+  
+  #https://cran.r-project.org/web/packages/usmap/vignettes/advanced-mapping.html
+  #
+  
+  # version 4 - PR's full map ----
+  make_map = function(DAT, VAR, COLOR_LEGEND){
+    
+    ## Set CRS
+    common_crs <- 4326
+    
+    ## Set map size and point size
+    point_size <- 2
+    map_width = 9
+    map_height = 6
+    
+    # Set up map layers for plotting
+    
+    ## Set regional and CB (inset) bounding boxes
+    us_bbox <- c(xmin = -125, xmax = -60, ymin = 20, ymax = 50)
+    region_bbox <- c(xmin = -95, xmax = -70, ymin = 35, ymax = 48)
+    cb_bbox <- c(xmin = -77.8, xmax = -74.5, ymin = 36.8, ymax = 40.5)
+    
+    ## Make US states map cropped to GL/CB region
+    us <- read_sf("cb_2018_us_state_5m/cb_2018_us_state_5m.shp") %>% 
+      st_transform(., crs = common_crs) %>% 
+      st_crop(., y = us_bbox)
+    
+    region <- st_crop(us, y = region_bbox)
+    
+    ## Further crop states to CB region
+    cb_states <- st_crop(region, y = cb_bbox)
+    
+    ##    # make a dataset merging metadata with site lat-longs
+    ##    df_map <- inner_join(DAT, latlong, by = "kit_id") %>% 
+    ##      st_as_sf(., coords = c("long", "lat"), crs = common_crs)
+    ##    
+    ##    ## Crop data  to CB region for inset plot
+    ##    df_cb <- st_crop(df_map, y = cb_bbox)
+    ##    
+    ##    ## get max and min values for variable
+    ##    var_min = DAT %>% dplyr::select(-kit_id) %>% pull() %>% min(na.rm = TRUE)
+    ##    var_max = DAT %>% dplyr::select(-kit_id) %>% pull() %>% max(na.rm = TRUE)
+    
+    
+    ## Make the base map with all sites
+    base_plot <- 
+      ggplot() + 
+      geom_sf(data = region) + 
+      #geom_sf(data = meta_map, size = point_size * 3, color = "white") +
+      ##      geom_sf(data = df_map, 
+      ##              color = "white", size = point_size * 2.5) + 
+      ##      geom_sf(data = df_map, 
+      ##              aes_string(color = VAR), 
+      ##              size = point_size * 2) + 
+      geom_rect(aes(xmin = -77.8, xmax = -74.5, ymin = 36.8, ymax = 40.5), 
+                fill = NA, color = "black", lwd = 0.75) +
+      geom_segment(aes(x = -77.8, xend = -76, y = 40.5, yend = 42), 
+                   color = "black", lwd = 0.75) + 
+      geom_segment(aes(x = -74.5, xend = -71, y = 40.5, yend = 41.5), 
+                   color = "black", lwd = 0.75) + 
+      cowplot::theme_map() + 
+      theme(legend.background = element_rect(fill = alpha("white", 0.0)), 
+            legend.key = element_rect(fill = "transparent"), 
+            legend.position = c(0.85, 0.1)) + 
+      #      scale_color_viridis_c(limits = c(var_min, var_max)) + 
+      #      labs(x = "", y = "" , color = COLOR_LEGEND)+
+      NULL
+    
+    ## Make the inset map with just CB sites
+    inset_plot <- 
+      ggplot() + 
+      geom_sf(data = cb_states) + 
+      #      geom_sf(data = df_cb, 
+      #              color = "white", size = point_size * 2) + 
+      #      geom_sf(data = df_cb, 
+      #              aes_string(color = VAR), 
+      #              size = point_size * 1.7) + 
+      cowplot::theme_map() + 
+      theme(legend.background = element_rect(fill = alpha("white", 0.0)), 
+            legend.key = element_rect(fill = "transparent"), 
+            #legend.position = c(0.7, 0)
+            legend.position = "none") + 
+      #      scale_color_viridis_c(limits = c(var_min, var_max)) + 
+      theme(panel.background = element_rect(fill = "white", colour = "black"),
+            axis.text = element_blank()) + 
+      labs(color = "")
+    
+    ## Combine into single figure
+    base_plot + 
+      annotation_custom(
+        ggplotGrob(inset_plot), 
+        xmin = -78, xmax = -70, ymin = 41, ymax = 48.8)
+    
+  }
+  
+  # version 5 - from PR's map for Anoxia
+  ## Set CRS
+  common_crs <- 4326
+  
+  ## Set map size and point size
+  point_size <- 2
+  map_width = 9
+  map_height = 6
+  
+  # Set up map layers for plotting
+  
+  ## Set regional and CB (inset) bounding boxes
+  us_bbox <- c(xmin = -125, xmax = -60, ymin = 20, ymax = 50)
+  region_bbox <- c(xmin = -95, xmax = -60, ymin = 35, ymax = 50)
+  cb_bbox <- c(xmin = -77.8, xmax = -74.5, ymin = 36.8, ymax = 40.5)
+  wle_bbox <- c(xmin = -85, xmax = -79, ymin = 38, ymax = 44)
+  
+  ## Make US states map cropped to GL/CB region
+  us <- read_sf("cb_2018_us_state_5m/cb_2018_us_state_5m.shp") %>% 
+    st_transform(., crs = common_crs) %>% 
+    st_crop(., y = us_bbox)
+  
+  region <- st_crop(us, y = region_bbox)
+  
+  ## Further crop states to CB region
+  cb_states <- st_crop(region, y = cb_bbox)
+  wle_states <- st_crop(region, y = wle_bbox)
+  
+  st_labels = st_centroid(us) %>% filter(!STUSPS %in% c("TN", "NC", "DC"))
+  
+  ## Make the base map with all sites
+  base_plot <- 
+    ggplot() + 
+    geom_sf(data = region) + 
+    geom_sf_text(data = st_labels, aes(label = STUSPS))+
+    #      geom_sf_label(aes(label = NAME))
+    geom_rect(aes(xmin = -85, xmax = -79, ymin = 38, ymax = 44), 
+              fill = NA, color = "black", lwd = 0.75) +
+    geom_segment(aes(x = -85, xend = -75.5, y = 38, yend = 34.3), 
+                 color = "black", lwd = 0.75) + 
+    geom_segment(aes(x = -79, xend = -67.8, y = 44, yend = 42.5), 
+                 color = "black", lwd = 0.75) + 
+    xlim(-90, -67)+
+    ylim(34.3, 49)+
+    #      cowplot::theme_map() + 
+    theme(legend.background = element_rect(fill = alpha("white", 0.0)), 
+          legend.key = element_rect(fill = "transparent"), 
+          legend.position = c(0.85, 0.1)) + 
+    labs(x = "", y = "")+
+    NULL
+  
+  ## Make the inset map with just CB sites
+  inset_plot <- 
+    ggplot() + 
+    geom_sf(data = wle_states) + 
+    geom_point(aes(x = -82.3025, y = 41.22), size = 5, color = "red")+
+    geom_text(aes(x = -82.3025, y = 40.9), label = "Old Woman Creek", size = 4)+
+    geom_text(aes(x = -81.5, y = 42.5), label = "Lake Erie", size = 4)+
+    cowplot::theme_map() + 
+    #  theme_kp()+
+    theme(legend.position = "none",
+          panel.background = element_rect(fill = "white", colour = "black", size = 1),
+          axis.text = element_blank()) 
+  
+  ## Combine into single figure
+  base_plot + 
+    annotation_custom(
+      ggplotGrob(inset_plot), 
+      xmin = -76, xmax = -67, ymin = 28, ymax = 48.8)+
+    theme_kp()
+  
+  
+  
+}
