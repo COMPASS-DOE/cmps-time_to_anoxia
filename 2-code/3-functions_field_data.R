@@ -34,6 +34,7 @@ troll_processed %>%
   facet_wrap(~location, scales = "free")
 
 
+# same x-axis
 troll_processed %>% 
   mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
   ggplot(aes(x = hours, y = do_mgl,
@@ -52,7 +53,8 @@ troll_processed %>%
   NULL
 # save: 550l * 1100w
 
-troll_processed %>% 
+# different x-axis
+gg_do = troll_processed %>% 
   mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
   ggplot(aes(x = hours, y = do_mgl,
              color = interaction(peak, location),
@@ -62,7 +64,7 @@ troll_processed %>%
   labs(x = "Hours",
        y = "Dissolved Oxygen, mg/L")+
   scale_color_brewer(palette = "PuOr")+
-  facet_wrap(~location, scales = "free", 
+  facet_wrap(~location, scales = "free_x", 
              nrow = 1)+
   theme(axis.text = element_text(size = 14),
         axis.title = element_text(size = 16),
@@ -94,32 +96,40 @@ troll_processed %>%
   NULL
 # save 500l * 550w
 
-troll_processed %>% 
-  ggplot(aes(x = hours, y = do_mgl,
-             color = location))+
-  geom_line(size = 1)+
-  scale_color_manual(breaks = c("TR", "WC"),
-                     labels = c("transition", "wetland"),
-                     values = c("red", "blue"))+
+
+# ORP different x-axis
+gg_orp = troll_processed %>% 
+  mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
+  ggplot(aes(x = hours, y = p_h_orp,
+             color = interaction(peak, location),
+  ))+
+  geom_line(size = 1,
+            show.legend = F)+
   labs(x = "Hours",
-       y = "Dissolved oxygen, mg/L",
-       color = "")+
-  facet_wrap(~peak, scales = "free_x")
+       y = "Redox Potential")+
+  scale_color_brewer(palette = "PuOr")+
+  facet_wrap(~location, scales = "free_x", 
+             nrow = 1)+
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size=16, face="bold")
+  )+
+  NULL
 
-
+library(patchwork)
+gg_do / gg_orp + plot_annotation(title = "Field data from Aqua TROLLS")
 
 
 troll_processed %>% 
-  ggplot(aes(x = hours, y = do_mgl,
-             color = as.character(peak)))+
-  geom_line(size = 1)+
-#  scale_color_manual(breaks = c("TR", "WC"),
-#                     labels = c("transition", "wetland"),
-#                     values = c("red", "blue"))+
-  labs(x = "Hours",
-       y = "Dissolved oxygen, mg/L",
-       color = "")+
-  facet_wrap(~location, scales = "free_x")
+  mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
+  ggplot(aes(x = hours))+
+  geom_line(aes(y = do_mgl), color = "red")+
+  geom_line(aes(y = p_h_orp/25), color = "blue")+
+  facet_wrap(~location + peak, nrow = 2, scales = "free_x")+
+  scale_y_continuous(sec.axis = sec_axis(~.*25, name = "Redox Potential (blue)"),
+                     name = "Dissolved oxygen, mg/L (red)")+
+  labs(title = "Field data from Aqua TROLLS")
+
 
 
 
