@@ -61,6 +61,12 @@ list(
   tar_target(pH_processed, process_pH(pH_data)),
   tar_target(gg_pH, plot_pH(pH_processed, sample_key)),
   
+  # field
+  tar_target(troll_data_file, "1-data/field_data/230106_troll_oxygen_peak_data.csv", format = "file"),
+  tar_target(troll_data, read.csv(troll_data_file)),
+  tar_target(troll_processed, process_troll(troll_data)),
+  tar_target(gg_troll, plot_troll(troll_processed)),
+  
   # export
   tar_target(exports, {
     write.csv(optode_data_processed, "1-data/processed/optode_data_processed.csv", row.names = FALSE)
