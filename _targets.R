@@ -20,6 +20,7 @@ source("2-code/0-packages.R")
 source("2-code/0b-initial_processing.R")
 source("2-code/1-functions_processing.R")
 source("2-code/2-functions_analysis.R")
+source("2-code/3-functions_field_data.R")
 
 # list of targets
 list(

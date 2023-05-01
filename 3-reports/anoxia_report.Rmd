@@ -53,6 +53,19 @@ tar_read(gg_pH)
 
 
 
+## Field data (Aqua TROLL)
+
+Version 1
+
+```{r field_do_orp, fig.width=6, fig.height=6}
+tar_read(gg_troll)$gg_combined
+```
+
+Version 2
+
+```{r field_do_orp_dual_axis, fig.width=10, fig.height=6}
+tar_read(gg_troll)$gg_combined_dual_axes
+```
 ---
 
 <details>
