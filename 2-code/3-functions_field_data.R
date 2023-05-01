@@ -31,15 +31,22 @@ plot_troll = function(troll_processed){
   # different x-axis
   gg_do = 
     troll_processed %>% 
-    mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
+    mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland"),
+           color = paste0(location, "_", peak)) %>% 
     ggplot(aes(x = hours, y = do_mgl,
-               color = interaction(peak, location),
+               color = color
     ))+
     geom_line(size = 1,
               show.legend = F)+
     labs(x = "Hours",
          y = "Dissolved Oxygen, mg/L")+
-    scale_color_brewer(palette = "PuOr")+
+    #scale_color_brewer(palette = "PuOr")+
+    scale_color_manual(
+      breaks = c("Transition_2", "Transition_1", "Transition_3", "Transition_4",
+                 "Wetland_1", "Wetland_2", "Wetland_3", "Wetland_4"),
+      values = c("#fee0b6", "#fdb863",  "#e08214", "#b35806", 
+                 "#d8daeb", "#b2abd2", "#8073ac", "#542788")
+    )+
     facet_wrap(~location, scales = "free_x", 
                nrow = 1)+
     theme(axis.text = element_text(size = 14),
@@ -63,7 +70,7 @@ plot_troll = function(troll_processed){
          y = "Dissolved Oxygen, mg/L",
          #title = "WETLAND"
     )+
-    scale_color_brewer(palette = "PuOr")+
+    #scale_color_brewer(palette = "PuOr")+
     facet_wrap(~location, scales = "free", 
                nrow = 2)+
     theme(axis.text = element_text(size = 14),
@@ -77,15 +84,22 @@ plot_troll = function(troll_processed){
   # ORP different x-axis
   gg_orp = 
     troll_processed %>% 
-    mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
+    mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland"),
+           color = paste0(location, "_", peak)) %>% 
     ggplot(aes(x = hours, y = p_h_orp,
-               color = interaction(peak, location),
+               color = color,
     ))+
     geom_line(size = 1,
               show.legend = F)+
     labs(x = "Hours",
-         y = "Redox Potential")+
-    scale_color_brewer(palette = "PuOr")+
+         y = "Redox Potential, mV")+
+    #scale_color_brewer(palette = "PuOr")+
+    scale_color_manual(
+      breaks = c("Transition_2", "Transition_1", "Transition_3", "Transition_4",
+                 "Wetland_1", "Wetland_2", "Wetland_3", "Wetland_4"),
+      values = c("#fee0b6", "#fdb863",  "#e08214", "#b35806", 
+                 "#d8daeb", "#b2abd2", "#8073ac", "#542788")
+    )+
     facet_wrap(~location, scales = "free_x", 
                nrow = 1)+
     theme(axis.text = element_text(size = 14),
@@ -94,15 +108,15 @@ plot_troll = function(troll_processed){
     )+
     NULL
   
-  library(patchwork)
+  #library(patchwork)
   gg_combined = 
+    cowplot::plot_grid(gg_do, gg_orp, nrow = 2)
   #  gg_do / gg_orp + plot_annotation(title = "Field data from Aqua TROLLS")
-  cowplot::plot_grid(gg_do, gg_orp, nrow = 2)
   
   
 
   # dual axes
-  gg_combined_dual_axis = 
+  gg_combined_dual_axes = 
     troll_processed %>% 
     mutate(location = recode(location, "TR" = "Transition", "WC" = "Wetland")) %>% 
     ggplot(aes(x = hours))+
@@ -118,6 +132,9 @@ plot_troll = function(troll_processed){
     #            y = c(-250, 250))
     # 
     # lm(y~x, data = y)
+  
+  list(gg_combined = gg_combined,
+       gg_combined_dual_axes = gg_combined_dual_axes)
 }
 
 compute_rates = function(troll_processed){
