@@ -178,7 +178,8 @@ plot_optode_data = function(optode_data_processed){
     labs(#title = "Time to Anoxia",
       x = "Elapsed time, days",
       y = "Dissolved oxygen, mg/L")+
-    theme(legend.position = "right")  +
+    facet_grid(. ~ transect)+
+    theme(legend.position = "none")  +
     NULL
   
   version2 = cowplot::plot_grid(version2_gg_24hr + ggtitle("A: 24-hour"), 
