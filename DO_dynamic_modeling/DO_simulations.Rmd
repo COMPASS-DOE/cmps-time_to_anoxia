@@ -1,0 +1,626 @@
+---
+title: "time_to_anoxia_modeling"
+author: "Jianqiu Zheng"
+date: "3/5/2023"
+output: html_document
+---
+
+##Building simple kinetic model
+##concentration in mg/L
+```{r kinetic_model_demo}
+library(FME)
+
+solveDOKin <- function(pars, times=seq(0,30, by=0.05)){
+    derivs <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      r1<- vmax1* Oxy/(Oxy+10)*CHO/(CHO+10)  #dual-substrate   
+      dOxy <--r1*BM1  #stoichiometry
+      dCHO <--r1*BM1
+      dBM1 <- r1*BM1
+    return(list(c(dOxy, dCHO,dBM1)))
+      })
+  }
+times=seq(0,30, by=0.05)
+state<-c(Oxy=8,CHO=50, BM1=1)
+#solved the model
+  ox<-ode(y=state, times=times, func=derivs, parms=pars)
+
+data.frame(ox[,1:4])
+}
+
+pars1<- list (vmax1=1)
+output1<-solveDOKin(pars1)  
+
+
+##plotting
+#pdf("DO_dynamic.pdf", width=3.4, height=3.6)
+plot(output1$time,output1$Oxy, type = "l", main="Microbial uptake rate",xlab = "Time (h)", ylab = "DO (mg/L)", lwd=3,lty=1,col="#fdb863", xlim=c(0,30), ylim=c(0,10))
+
+#dev.off()
+
+
+```
+
+
+# Fitting observational data with linear model (abiotic)
+```{r abiotic}
+
+raw<-read.csv("wetlandA.csv",header=TRUE)
+sub1<-raw[raw$sample_name =='anoxia_062',]
+Data<-sub1[, c("time_hour","DO_corrected_mgL")]
+colnames(Data)<-c("time","Oxy")
+
+
+solveABO <- function(pars, times=seq(0,30, by=0.05)){
+    derivs <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      dOxy <--va*Oxy  #
+    return(list(c(dOxy)))
+      })
+  }
+times=seq(0,30, by=0.05)
+state<-c(Oxy=5.2) #mg/g
+#solved the mode
+  ox<-ode(y=state, times=times, func=derivs, parms=pars)
+
+data.frame(ox[,1:2])
+}
+
+pars<- list (va=1)
+#output1<-solveLIN(pars1)  
+
+
+Objective <- function(x, parset = names(x)) {
+ pars[parset] <- x
+ tout <- seq(0, 30, by = 0.05) ## output times
+ out <- solveABO(pars, tout)
+ return(modCost(model = out, obs = Data))## Model cost
+}
+
+#parameters are constrained to be >0
+print(system.time(Fit <- modFit(p = c(va=1),
+ f = Objective, lower = c(0.0))))
+
+summary(Fit)
+result<-list(Fit$par, Fit$ssr)
+result
+
+##plotting of single fitting
+pars[c("va")]<-Fit$par
+#pars<- list (vmax1=1,vmax2=46,vmax3=69)
+output<-solveABO(pars)  
+
+mfit<-as.data.frame(output[, 1:2])
+colnames(mfit) <- c("time", "Oxy")
+head(mfit)
+
+
+#pdf("lowC_highN.pdf", width=6, height=4)
+#par(xpd = T, mar = par()$mar + c(0,0,0,10))
+plot(Data$time,Data$Oxy, xlab = "Time (d)", ylab = "Concentration (uM)", pch=16, cex=1.2,col="#e08214", xlim=c(0,30), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
+lines(output$time, output$Oxy, lwd=4, col="black")
+#legend("topright",inset = c(- 0.6, 0), c("NO3","NO2","Inflow"), lwd=2, lty=c(1,3),col=c("#e08214","#e08214","#e08214"))
+
+#dev.off()
+
+#--------plotting all reps
+pars1<- list (va=0.209)
+output1<-solveABO(pars1)
+
+pars2<- list (va=0.4579)
+output2<-solveABO(pars2) 
+
+pars3<- list (va=0.5668)
+output3<-solveABO(pars3)  
+
+
+final<-cbind(output1$time, output1$Oxy,output2$Oxy, output3$Oxy)
+colnames(final)<-c("time","DO1","DO2","DO3") 
+write.csv(final, "wetA_ABO.csv")
+
+
+raw<-read.csv("wetlandA.csv",header=TRUE)
+pdf("wetA_ABO.pdf", width=3.4, height=3.6)
+plot(raw$time_hour,raw$DO_corrected_mgL, xlab = "Time (h)", ylab = "DO (mg/L)", pch=1, cex=1.2,col="#fdb863", xlim=c(0,25), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
+lines(output1$time, output1$Oxy, lty=3,lwd=2, col="#7f3b08")
+lines(output2$time, output2$Oxy, lty=3,lwd=2, col="#7f3b08")
+lines(output3$time, output3$Oxy, lty=3,lwd=2, col="#7f3b08")
+legend("topright", c("Obv","Model"), pch=c(1,NA), lty=c(0,3),lwd=c(NA, 2), col=c("#fdb863","#7f3b08","#b35806","#e08214","#fdb863","#542788","#8073ac"))
+
+dev.off()
+
+
+```
+
+
+
+##fitting observational data with nonlinear model. Note: 3 replicates for each soil, replicates are fitted independently
+```{r data_fitting}
+##load data
+raw<-read.csv("uplandA.csv",header=TRUE)
+sub1<-raw[raw$sample_name =='anoxia_047',]
+Data<-sub1[, c("time_hour","DO_corrected_mgL")]
+colnames(Data)<-c("time","Oxy")
+
+Data$diff<-(Data$Oxy-mean(Data$Oxy))^2
+TSS<-sum(Data$diff)
+
+#function
+library(FME)
+
+solveMM <- function(pars, times=seq(0,30, by=0.05)){
+    derivs <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      r1<- vmax1* Oxy/(Oxy+10) #     
+      dOxy <--r1*BM1 #
+      dCHO <--r1*BM1
+      dBM1 <- r1*BM1
+    return(list(c(dOxy, dCHO,dBM1)))
+      })
+  }
+times=seq(0,30, by=0.05)
+state<-c(Oxy=8.39,CHO=51.1, BM1=1) #mg/g
+#solved the mode
+  ox<-ode(y=state, times=times, func=derivs, parms=pars)
+
+data.frame(ox[,1:4])
+}
+
+
+#fitting
+Objective <- function(x, parset = names(x)) {
+ pars[parset] <- x
+ tout <- seq(0, 30, by = 0.05) ## output times
+ out <- solveMM(pars, tout)
+ return(modCost(model = out, obs = Data))## Model cost
+}
+
+
+#parameters are constrained to be >0
+print(system.time(Fit <- modFit(p = c(vmax1=0.5),
+ f = Objective, lower = c(0.0))))
+
+summary(Fit)
+result<-list(Fit$par, Fit$ssr)
+result
+
+##plotting
+pars[c("vmax1")]<-Fit$par
+output<-solveMM(pars)  
+
+mfit<-as.data.frame(output[, 1:2])
+colnames(mfit) <- c("time", "Oxy")
+head(mfit)
+
+
+#pdf("lowC_highN.pdf", width=6, height=4)
+#par(xpd = T, mar = par()$mar + c(0,0,0,10))
+plot(Data$time,Data$Oxy, xlab = "Time (d)", ylab = "Concentration (uM)", pch=16, cex=1.2,col="#e08214", xlim=c(0,30), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
+lines(output$time, output$Oxy, lwd=4, col="black")
+#legend("topright",inset = c(- 0.6, 0), c("NO3","NO2","Inflow"), lwd=2, lty=c(1,3),col=c("#e08214","#e08214","#e08214"))
+
+#dev.off()
+
+##plotting all replicates
+pars1<- list (vmax1=0.8005)
+output1<-solveMM(pars1)
+
+pars2<- list (vmax1=0.6398)
+output2<-solveMM(pars2) 
+
+pars3<- list (vmax1=0.4713)
+output3<-solveMM(pars3)  
+
+final<-cbind(output1$time, output1$Oxy,output2$Oxy, output3$Oxy)
+colnames(final)<-c("time","DO1","DO2","DO3") 
+write.csv(final, "upA_MM.csv")
+
+raw<-read.csv("uplandA.csv",header=TRUE)
+#pdf("upA_MM.pdf", width=3.4, height=3.6)
+plot(raw$time_hour,raw$DO_corrected_mgL, xlab = "Time (h)", ylab = "DO (mg/L)", pch=1, cex=1,col="#fdb863", xlim=c(0,25), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
+lines(output1$time, output1$Oxy, lty=2, lwd=2, col="#7f3b08")
+lines(output2$time, output2$Oxy, lty=2, lwd=2, col="#7f3b08")
+lines(output3$time, output3$Oxy, lty=2, lwd=2, col="#7f3b08")
+#legend("topright", c("Obv","Model"), pch=c(1,NA), lty=c(0,2),lwd=c(NA, 2), col=c("#fdb863","#7f3b08","#b35806","#e08214","#fdb863","#542788","#8073ac"))
+
+#dev.off()
+
+
+```
+
+
+# fitting combined linear + MM formulation
+```{r abiotic}
+
+raw<-read.csv("wetlandA.csv",header=TRUE)
+sub1<-raw[raw$sample_name =='anoxia_060',]
+Data<-sub1[, c("time_hour","DO_corrected_mgL")]
+colnames(Data)<-c("time","Oxy")
+
+
+
+solveCOM <- function(pars, times=seq(0,30, by=0.05)){
+    derivs <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      r1<- vmax1* Oxy/(Oxy+10) #     
+      dOxy <--r1*BM1-va*Oxy  #
+      dCHO <--r1*BM1
+      dBM1 <- r1*BM1
+    return(list(c(dOxy, dCHO,dBM1)))
+      })
+  }
+times=seq(0,30, by=0.05)
+state<-c(Oxy=5.97,CHO=51.1, BM1=1) #mg/g
+#solved the mode
+  ox<-ode(y=state, times=times, func=derivs, parms=pars)
+
+data.frame(ox[,1:4])
+}
+
+pars<- list (vmax1=10, va=1)
+#output1<-solveLIN(pars1)  
+
+
+Objective <- function(x, parset = names(x)) {
+ pars[parset] <- x
+ tout <- seq(0, 30, by = 0.05) ## output times
+ out <- solveCOM(pars, tout)
+ return(modCost(model = out, obs = Data))## Model cost
+}
+
+
+#parameters are constrained to be >0
+print(system.time(Fit <- modFit(p = c(vmax1=0.1, va=0.1),
+ f = Objective, lower = c(0.01, 0.0),upper = c(2, 0.5))))
+
+summary(Fit)
+result<-list(Fit$par, Fit$ssr)
+result
+
+##plotting 
+pars[c("vmax1", "va")]<-Fit$par
+#pars<- list (vmax1=1,vmax2=46,vmax3=69)
+output<-solveCOM(pars)  
+
+mfit<-as.data.frame(output[, 1:4])
+colnames(mfit) <- c("time", "Oxy","CHO","Amm")
+head(mfit)
+
+plot(Data$time,Data$Oxy, xlab = "Time (d)", ylab = "Concentration (uM)", pch=16, cex=1.2,col="#e08214", xlim=c(0,30), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
+lines(output$time, output$Oxy, lwd=4, col="black")
+
+#------------------plotting all reps
+pars1<- list (vmax1=0.447, va=0.154)
+output1<-solveCOM(pars1)
+
+pars2<- list (vmax1=0.101, va=0.449)
+output2<-solveCOM(pars2) 
+
+pars3<- list (vmax1=0.0126,va=0.4569)
+output3<-solveCOM(pars3)  
+
+
+final<-cbind(output1$time, output1$Oxy,output2$Oxy, output3$Oxy)
+colnames(final)<-c("time","DO1","DO2","DO3") 
+write.csv(final, "wetA_comb.csv")
+
+
+raw<-read.csv("wetlandA.csv",header=TRUE)
+pdf("wetA_COMB.pdf", width=3.4, height=3.6)
+
+plot(raw$time_hour,raw$DO_corrected_mgL, xlab = "Time (h)", ylab = "DO (mg/L)", pch=1, cex=1.2,col="#fdb863", xlim=c(0,25), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
+lines(output1$time, output1$Oxy, lwd=2, col="#7f3b08")
+lines(output2$time, output2$Oxy, lwd=2, col="#7f3b08")
+lines(output3$time, output3$Oxy, lwd=2, col="#7f3b08")
+legend("topright", c("Obv","Model"), pch=c(1,NA), lty=c(0,1), col=c("#fdb863","#7f3b08","#b35806","#e08214","#fdb863","#542788","#8073ac"))
+
+dev.off()
+
+
+```
+
+
+
+
+
+
+
+###Varying rate ratio
+```{r data}
+
+solveCOM <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      r1<- 0.5* Oxy/(Oxy+10)*CHO/(CHO+10)  #denitrification     
+      dOxy <--r1*BM1-alpha*0.5*Oxy  #stoichiometry from van den Berg
+      dCHO <--r1*BM1
+      dBM1 <- r1*BM1
+    return(list(c(dOxy, dCHO,dBM1)))
+      })
+    }
+
+
+times=seq(0,30, by=0.05)
+state<-c(Oxy=8,CHO=50, BM1=1)
+
+pars1=list (alpha=0)
+pars2=list (alpha=0.1)
+pars3=list (alpha=0.2)
+pars4=list (alpha=0.5)
+pars5=list (alpha=1)
+pars6=list (alpha=2)
+pars7=list (alpha=5)
+
+ox1<-ode(y=state, times=times, func=solveCOM, parms=pars1)
+output1<-data.frame(ox1[,1:4])
+
+
+ox2<-ode(y=state, times=times, func=solveCOM, parms=pars2)
+output2<-data.frame(ox2[,1:4])
+
+
+ox3<-ode(y=state, times=times, func=solveCOM, parms=pars3)
+output3<-data.frame(ox3[,1:4])
+
+
+ox4<-ode(y=state, times=times, func=solveCOM, parms=pars4)
+output4<-data.frame(ox4[,1:4])
+
+
+ox5<-ode(y=state, times=times, func=solveCOM, parms=pars5)
+output5<-data.frame(ox5[,1:4])
+
+ox6<-ode(y=state, times=times, func=solveCOM, parms=pars6)
+output6<-data.frame(ox6[,1:4])
+
+
+ox7<-ode(y=state, times=times, func=solveCOM, parms=pars7)
+output7<-data.frame(ox7[,1:4])
+
+
+
+##plotting
+pdf("Varying_ratio.pdf", width=3.4, height=3.6)
+plot(output1$time,output1$Oxy, type = "l", main="rate ratio",xlab = "Time (h)", ylab = "DO (mg/L)", lwd=3,lty=1,col="#7f3b08", xlim=c(0,30), ylim=c(0,10))
+lines(output2$time,output2$Oxy, lwd=3, lty=1, col="#b35806")
+lines(output3$time,output3$Oxy, lwd=3, lty=1, col="#e08214")
+lines(output4$time,output4$Oxy, lwd=3, lty=1, col="#fdb863")
+lines(output5$time,output5$Oxy, lwd=3, lty=1, col="#b2abd2")
+lines(output6$time,output6$Oxy, lwd=3, lty=1, col="#8073ac")
+lines(output7$time,output7$Oxy, lwd=3, lty=1, col="#542788")
+
+#legend("topright", c("1","2","3","4","5","6","7"), lwd=3, lty=1, col=c("#7f3b08","#b35806","#e08214",  "#fdb863","#b2abd2","#8073ac","#542788"))
+
+dev.off()
+
+
+```
+
+
+###Varying rate ratio
+```{r data}
+
+##combined formulation
+
+solveCOM <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      r1<- vmax1* Oxy/(Oxy+10)*CHO/(CHO+10)  #denitrification     
+      dOxy <--r1*BM1-0.1*Oxy  #stoichiometry from van den Berg
+      dCHO <--r1*BM1
+      dBM1 <- r1*BM1
+    return(list(c(dOxy, dCHO,dBM1)))
+      })
+    }
+
+pars=list (vmax1=0.5)
+times=seq(0,30, by=0.05)
+
+state1<-c(Oxy=8,CHO=25, BM1=1)
+ox1<-ode(y=state1, times=times, func=solveCOM, parms=pars)
+output1<-data.frame(ox1[,1:4])
+
+state2<-c(Oxy=8,CHO=37.5, BM1=1)
+ox2<-ode(y=state2, times=times, func=solveCOM, parms=pars)
+output2<-data.frame(ox2[,1:4])
+
+state3<-c(Oxy=8,CHO=50, BM1=1)
+ox3<-ode(y=state3, times=times, func=solveCOM, parms=pars)
+output3<-data.frame(ox3[,1:4])
+
+state4<-c(Oxy=8,CHO=62.5, BM1=1)
+ox4<-ode(y=state4, times=times, func=solveCOM, parms=pars)
+output4<-data.frame(ox4[,1:4])
+
+state5<-c(Oxy=8,CHO=75, BM1=1)
+ox5<-ode(y=state5, times=times, func=solveCOM, parms=pars)
+output5<-data.frame(ox5[,1:4])
+
+
+
+##plotting
+pdf("Varying_DOC_COM.pdf", width=3.4, height=3.6)
+plot(output1$time,output1$Oxy, type = "l", main="Initial DOC",xlab = "Time (h)", ylab = "DO (mg/L)", lwd=3,lty=1,col="#fdb863", xlim=c(0,25), ylim=c(0,10))
+lines(output2$time,output2$Oxy, lwd=3, lty=1, col="#e08214")
+lines(output3$time,output3$Oxy, lwd=3, lty=2, col="#5e5e60")
+lines(output4$time,output4$Oxy, lwd=3, lty=1, col="#b35806")
+lines(output5$time,output5$Oxy, lwd=3, lty=1, col="#7f3b08")
+legend("topright", c("-50%","-25%","Ref","+25%","+50%"),lwd=3, lty=c(1,1,2,1,1), col=c("#fdb863","#e08214","#5e5e60","#b35806","#7f3b08"))
+
+dev.off()
+
+
+```
+
+
+```{r data}
+
+solveNR <- function(pars, times=seq(0,400, by=0.1)){
+    derivs <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      r1<- vmax1* Oxy/(Oxy+100) * CHO/(CHO+1)  #stoichi: 0.31~0.8    
+      dOxy <--r1*BM1  #stoichiometry from van den Berg
+      dCHO <--2.7*r1*BM1
+      dBM1 <- r1*BM1
+    return(list(c(dOxy, dCHO,dBM1)))
+      })
+  }
+times=seq(0,400, by=0.1)
+state<-c(Oxy=8,CHO=20, BM1=1)
+#solved the mode
+  ox<-ode(y=state, times=times, func=derivs, parms=pars)
+
+data.frame(ox[,1:4])
+}
+
+pars1<- list (vmax1=1.5)
+output1<-solveNR(pars1) 
+
+
+pars2<- list (vmax1=1.5)
+output2<-solveNR(pars2)  
+
+pars3<- list (vmax1=1.5)
+output3<-solveNR(pars3) 
+
+
+#output1,2,3====CHO 10,20,30
+pdf("varyingC.pdf", width=4, height=4)
+plot(output1$time/24,output1$Oxy, lwd=3, lty=1,type = "l", xlab = "Time (d)", ylab = "DO (mg/L)", col="#fdb863", xlim=c(0,14), ylim=c(0,10))
+lines(output2$time/24,output2$Oxy, lwd=3, lty=1, col="#e08214")
+lines(output3$time/24,output3$Oxy, lwd=3, lty=1, col="#b35806")
+
+legend("topright", c("DOC=10 mg/L","DOC=15 mg/L","DOC=20 mg/L"), lwd=c(3,3,3),lty=c(1,1,1), col=c("#fdb863","#e08214","#b35806"))
+dev.off()
+
+
+```
+
+
+
+
+##Varying initial DOC concentration (to mimic horizon B)
+```{r data}
+
+
+derivs <- function(t, state, pars){
+      with(as.list(c(state, pars)),{
+      r1<- vmax1* Oxy/(Oxy+100) * CHO/(CHO+1)  #stoichi: 0.31~0.8    
+      dOxy <--r1*BM1  #stoichiometry from van den Berg
+      dCHO <--2.67*r1*BM1
+      dBM1 <- r1*BM1
+    return(list(c(dOxy, dCHO,dBM1)))
+      })
+    }
+
+times=seq(0,400, by=0.1)
+pars<- list (vmax1=1.5)
+state1<-c(Oxy=8,CHO=10, BM1=10)
+state2<-c(Oxy=8,CHO=15, BM1=10)
+state3<-c(Oxy=8,CHO=20, BM1=10)
+
+ox1<-ode(y=state1, times=times, func=derivs, parms=pars)
+output1<-data.frame(ox1[ ,1:4])
+
+ox2<-ode(y=state2, times=times, func=derivs, parms=pars)
+output2<-data.frame(ox2[ ,1:4])
+
+ox3<-ode(y=state3, times=times, func=derivs, parms=pars)
+output3<-data.frame(ox3[ ,1:4])
+
+
+
+#output1,2,3====CHO 10,20,30
+#pdf("varyingC.pdf", width=4, height=4)
+plot(output1$time/24,output1$Oxy, lwd=3, lty=1,type = "l", xlab = "Time (d)", ylab = "DO (mg/L)", col="#fdb863", xlim=c(0,14), ylim=c(0,10))
+lines(output2$time/24,output2$Oxy, lwd=3, lty=1, col="#e08214")
+lines(output3$time/24,output3$Oxy, lwd=3, lty=1, col="#b35806")
+
+legend("topright", c("10 mg/L","15 mg/L","20 mg/L"), lwd=c(3,3,3),lty=c(1,1,1), col=c("#fdb863","#e08214","#b35806"))
+#dev.off()
+
+
+```
+
+
+
+##box plot--summary of different model fittings
+```{r fitted}
+library(ggplot2)
+library(reshape2)
+library(ggpubr)
+theme_pubr()
+
+###biotic rate
+up<-c(0.8005,0.6398,0.4713)
+#tra<-c(0.7718,0.9996,0.8584)
+wet<-c(0.9833,2.4322,2.927)
+
+
+df<-data.frame(up, wet)
+colnames(df)<-c("Upland","Wetland")
+
+
+
+data<-reshape2::melt(df)
+scaleFUN <- function(x) sprintf("%.2f", x)
+p1<-ggplot(data, aes(x=variable, y=value, color=variable))+geom_boxplot()+ scale_color_manual(values=c("#e08214", "#b35806","#7f3b08"))+scale_fill_manual(values=c("#e08214", "#b35806","#7f3b08"))+ylim(0,3)+ylab("Fitted rate (mg/L/h)")+scale_y_continuous(labels=scaleFUN)+theme_pubr(border=TRUE)+theme(panel.grid.minor.x=element_line(linetype="dashed", color="gray",size=0.2))+theme(panel.grid.major.x=element_line(linetype="dashed", color="gray",size=0.2))+theme(axis.title.x=element_blank())+theme(legend.position="none")
+p1
+
+pdf("bio_rate_2loc.pdf", width=2.6, height=1.8)
+p1
+dev.off()
+
+
+#-----abiotic rate-----
+up<-c(0.1884,0.1452,0.1039)
+tra<-c(0.1768,0.2155,0.2010)
+wet<-c(0.209,0.4579,0.5668)
+
+df<-data.frame(up,  wet)
+colnames(df)<-c("Upland","Wetland")
+
+
+
+data<-reshape2::melt(df)
+
+p1<-ggplot(data, aes(x=variable, y=value, color=variable))+geom_boxplot(aes(fill=variable),alpha=0.4)+ scale_color_manual(values=c("#e08214", "#b35806","#7f3b08"))+scale_fill_manual(values=c("#e08214", "#b35806","#7f3b08"))+ylim(0,1)+ylab("Fitted rate (mg/L/h)")+theme_pubr(border=TRUE)+theme(panel.grid.minor.x=element_line(linetype="dashed", color="gray",size=0.2))+theme(panel.grid.major.x=element_line(linetype="dashed", color="gray",size=0.2))+theme(axis.title.x=element_blank())+theme(legend.position="none")
+p1
+
+pdf("abio_rate2loc.pdf", width=2.6, height=1.8)
+p1
+dev.off()
+
+
+
+#-----------Combined
+#abiotic rate
+up<-c(0.5455,0.4048,0.3678)
+tra<-c(0.588,0.7321,0.6373)
+wet<-c(0.4467,0.101,0.0126)
+
+df<-data.frame(up,  wet)
+df$rate<-c('vb')
+colnames(df)<-c("Upland","Wetland","rate")
+
+#biotic rate
+up<-c(0.09667,0.0845,0.0418)
+tra<-c(0.0743,0.095,0.0912)
+wet<-c(0.1543,0.4496,0.4569)
+
+df2<-data.frame(up,  wet)
+df2$rate<-c('vx')
+colnames(df2)<-c("Upland","Wetland","rate")
+
+data<-rbind(df, df2)
+
+
+
+df<-reshape2::melt(data, id.var='rate')
+
+p1<-ggplot(df, aes(x=variable, y=value, color=variable))+geom_boxplot(aes(fill=rate, alpha=rate))+ scale_color_manual(values=c("#e08214", "#b35806","#7f3b08"))+scale_fill_manual(values=c("#e08214", "#b35806","#7f3b08"))+scale_alpha_discrete(range=c(0,0.4))+ylim(0,1)+ylab("Fitted rate (mg/L/h)")+theme_pubr(border=TRUE)+theme(panel.grid.minor.x=element_line(linetype="dashed", color="gray",size=0.2))+theme(panel.grid.major.x=element_line(linetype="dashed", color="gray",size=0.2))+theme(axis.title.x=element_blank())+theme(legend.position="none")
+p1
+
+pdf("comb_rate_2loc.pdf", width=2.6, height=1.8)
+p1
+dev.off()
+
+```
