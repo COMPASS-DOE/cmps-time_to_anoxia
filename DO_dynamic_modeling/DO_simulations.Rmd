@@ -5,8 +5,8 @@ date: "3/5/2023"
 output: html_document
 ---
 
-##Building simple kinetic model
-##concentration in mg/L
+## Building simple kinetic model
+## concentration in mg/L
 ```{r kinetic_model_demo}
 library(FME)
 
@@ -45,7 +45,7 @@ plot(output1$time,output1$Oxy, type = "l", main="Microbial uptake rate",xlab = "
 # Fitting observational data with linear model (abiotic)
 ```{r abiotic}
 
-raw<-read.csv("wetlandA.csv",header=TRUE)
+raw<-read.csv("DO_dynamic_modeling/wetlandA.csv",header=TRUE)
 sub1<-raw[raw$sample_name =='anoxia_062',]
 Data<-sub1[, c("time_hour","DO_corrected_mgL")]
 colnames(Data)<-c("time","Oxy")
@@ -119,7 +119,7 @@ colnames(final)<-c("time","DO1","DO2","DO3")
 write.csv(final, "wetA_ABO.csv")
 
 
-raw<-read.csv("wetlandA.csv",header=TRUE)
+raw<-read.csv("DO_dynamic_modeling/wetlandA.csv",header=TRUE)
 pdf("wetA_ABO.pdf", width=3.4, height=3.6)
 plot(raw$time_hour,raw$DO_corrected_mgL, xlab = "Time (h)", ylab = "DO (mg/L)", pch=1, cex=1.2,col="#fdb863", xlim=c(0,25), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
 lines(output1$time, output1$Oxy, lty=3,lwd=2, col="#7f3b08")
@@ -134,10 +134,10 @@ dev.off()
 
 
 
-##fitting observational data with nonlinear model. Note: 3 replicates for each soil, replicates are fitted independently
+## fitting observational data with nonlinear model. Note: 3 replicates for each soil, replicates are fitted independently
 ```{r data_fitting}
 ##load data
-raw<-read.csv("uplandA.csv",header=TRUE)
+raw<-read.csv("DO_dynamic_modeling/uplandA.csv",header=TRUE)
 sub1<-raw[raw$sample_name =='anoxia_047',]
 Data<-sub1[, c("time_hour","DO_corrected_mgL")]
 colnames(Data)<-c("time","Oxy")
@@ -177,8 +177,8 @@ Objective <- function(x, parset = names(x)) {
 
 
 #parameters are constrained to be >0
-print(system.time(Fit <- modFit(p = c(vmax1=0.5),
- f = Objective, lower = c(0.0))))
+#print(system.time(Fit <- modFit(p = c(vmax1=0.5),
+# f = Objective, lower = c(0.0))))
 
 summary(Fit)
 result<-list(Fit$par, Fit$ssr)
@@ -215,7 +215,7 @@ final<-cbind(output1$time, output1$Oxy,output2$Oxy, output3$Oxy)
 colnames(final)<-c("time","DO1","DO2","DO3") 
 write.csv(final, "upA_MM.csv")
 
-raw<-read.csv("uplandA.csv",header=TRUE)
+raw<-read.csv("DO_dynamic_modeling/uplandA.csv",header=TRUE)
 #pdf("upA_MM.pdf", width=3.4, height=3.6)
 plot(raw$time_hour,raw$DO_corrected_mgL, xlab = "Time (h)", ylab = "DO (mg/L)", pch=1, cex=1,col="#fdb863", xlim=c(0,25), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
 lines(output1$time, output1$Oxy, lty=2, lwd=2, col="#7f3b08")
@@ -230,9 +230,9 @@ lines(output3$time, output3$Oxy, lty=2, lwd=2, col="#7f3b08")
 
 
 # fitting combined linear + MM formulation
-```{r abiotic}
+```{r abiotic2}
 
-raw<-read.csv("wetlandA.csv",header=TRUE)
+raw<-read.csv("DO_dynamic_modeling/wetlandA.csv",header=TRUE)
 sub1<-raw[raw$sample_name =='anoxia_060',]
 Data<-sub1[, c("time_hour","DO_corrected_mgL")]
 colnames(Data)<-c("time","Oxy")
@@ -305,7 +305,7 @@ colnames(final)<-c("time","DO1","DO2","DO3")
 write.csv(final, "wetA_comb.csv")
 
 
-raw<-read.csv("wetlandA.csv",header=TRUE)
+raw<-read.csv("DO_dynamic_modeling/wetlandA.csv",header=TRUE)
 pdf("wetA_COMB.pdf", width=3.4, height=3.6)
 
 plot(raw$time_hour,raw$DO_corrected_mgL, xlab = "Time (h)", ylab = "DO (mg/L)", pch=1, cex=1.2,col="#fdb863", xlim=c(0,25), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
@@ -325,7 +325,7 @@ dev.off()
 
 
 
-###Varying rate ratio
+### Varying rate ratio
 ```{r data}
 
 solveCOM <- function(t, state, pars){
@@ -396,8 +396,8 @@ dev.off()
 ```
 
 
-###Varying rate ratio
-```{r data}
+### Varying rate ratio
+```{r data-}
 
 ##combined formulation
 
@@ -451,7 +451,7 @@ dev.off()
 ```
 
 
-```{r data}
+```{r data--}
 
 solveNR <- function(pars, times=seq(0,400, by=0.1)){
     derivs <- function(t, state, pars){
@@ -497,8 +497,8 @@ dev.off()
 
 
 
-##Varying initial DOC concentration (to mimic horizon B)
-```{r data}
+## Varying initial DOC concentration (to mimic horizon B)
+```{r data---}
 
 
 derivs <- function(t, state, pars){
@@ -542,12 +542,12 @@ legend("topright", c("10 mg/L","15 mg/L","20 mg/L"), lwd=c(3,3,3),lty=c(1,1,1), 
 
 
 
-##box plot--summary of different model fittings
+## box plot--summary of different model fittings
 ```{r fitted}
 library(ggplot2)
 library(reshape2)
 library(ggpubr)
-theme_pubr()
+#theme_pubr()
 
 ###biotic rate
 up<-c(0.8005,0.6398,0.4713)
