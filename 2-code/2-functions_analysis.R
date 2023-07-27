@@ -262,6 +262,7 @@ compute_optode_slope = function(optode_data_processed){
     filter(max) %>% 
     dplyr::select(-max)
 
+  # ... or determine manually
   anoxia_time_manual = tribble(
     ~sample_name, ~anoxia_minutes,
     "anoxia_032", 690,
@@ -278,48 +279,22 @@ compute_optode_slope = function(optode_data_processed){
     "anoxia_062", 360
   )  
 
-  starting_do = 
-    optode_data_processed %>% 
-    group_by(sample_name) %>% 
-    mutate(min = time_minutes == min(time_minutes)) %>% 
-    filter(min) %>% 
-    rename(do_mg_L_START = do_mg_L,
-           time_minutes_START = time_minutes) %>% 
-    dplyr::select(sample_name, do_mg_L_START, time_minutes_START)
-  
-  
-  
-  anoxia_time = 
-    max_time %>% 
-    left_join(anoxia_time_manual) %>% 
-    mutate(time_minutes_STOP = case_when(!is.na(anoxia_minutes) ~ anoxia_minutes,
-                                            TRUE ~ time_minutes)) %>% 
-    dplyr::select(sample_name, time_minutes_STOP, do_mg_L) %>% 
-    rename(do_mg_L_STOP = do_mg_L) %>% 
+  # calculate slopes
+  # all samples started at 8.5 and ended at 0 mg/L,
+  # so all we really need is the time to anoxia
+  anoxia_slopes = 
+    anoxia_time_manual %>% 
     left_join(sample_key) %>% 
-    left_join(starting_do) %>% 
-    filter(!grepl("skip", notes)) %>% 
-    filter(!is.na(location)) %>% 
-    filter(!grepl("blank", location)) %>% 
-    dplyr::select(-ends_with("START"), -ends_with("STOP"), ends_with("START"), ends_with("STOP")) %>% 
-    mutate(do_slope = (do_mg_L_START - do_mg_L_STOP) / ((time_minutes_STOP - time_minutes_START)/60))
-    
-  anoxia_time_summary = 
-    anoxia_time %>% 
-    group_by(location, timepoint) %>%
-    dplyr::summarise(mean_slope = mean(do_slope))
-    
-  
-  anoxia_time_24hr = 
-    anoxia_time %>% 
-    filter(timepoint == "24-hour")
-  
-  a = aov(do_slope ~ location, data = anoxia_time_24hr)
-  summary(a)
-  
-  h = agricolae::HSD.test(a, "location")
-  
-  
+    mutate(
+      anoxia_hr = anoxia_minutes/60,
+      anoxia_rate = (8.5 - 0)/anoxia_hr) %>% 
+    group_by(timepoint, location) %>% 
+    dplyr::summarise(
+      rate_mean = mean(anoxia_rate),
+      rate_se = sd(anoxia_rate)/sqrt(n()),
+      anoxia_hr_mean = mean(anoxia_hr),
+      anoxia_hr_se = sd(anoxia_hr)/sqrt(n())
+    )
 }
 
 #
