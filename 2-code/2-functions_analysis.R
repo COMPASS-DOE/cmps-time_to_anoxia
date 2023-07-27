@@ -88,7 +88,6 @@ plot_optode_data_OLD = function(optode_data_processed){
        individual = individual)
 }
 
-
 plot_optode_data = function(optode_data_processed){
   
   optode_combined2 = 
@@ -190,65 +189,6 @@ plot_optode_data = function(optode_data_processed){
   
   list(version1 = version1,
        version2 = version2)
-  
-}
-
-plot_optode_data_v2 = function(optode_data_processed){
-  
-
-  
-}
-
-compute_optode_slope_OLD = function(optode_data_processed){
-  x = 
-    optode_data_processed %>% 
-    arrange(location, sample_name, time_minutes) %>% 
-    group_by(sample_name) %>% 
-    mutate(do_rolling_7 = zoo::rollmean(do_mg_L, k = 7, fill = NA),
-           do_slope = do_rolling_7 - lag(do_rolling_7),
-           do_slope2 = do_slope - lag(do_slope))
-  
-  x %>% 
-    filter(!is.na(location)) %>%
-    filter(location != "water") %>% 
-    ggplot(aes(x = time_minutes, y = do_slope2, color = sample_name))+
-    geom_line(show.legend = F)+
-    labs(#title = "Time to Anoxia",
-      x = "Elapsed time, minutes",
-      #y = "Dissolved oxygen, mg/L"
-      )+
-    facet_wrap(~timepoint+sample_name, ncol = 5)+
-    #  theme(legend.position = "none")+
-    NULL
-  
-}
-
-compute_optode_slope_OLD2 = function(optode_data_processed){
-  x = 
-    optode_data_processed %>% 
-    arrange(location, sample_name, time_minutes) %>% 
-    group_by(sample_name) %>% 
-    mutate(do_minimum = min(do_mg_L),
-           is_min = do_mg_L == do_minimum)
-  
-  x_min = 
-    x %>% 
-    filter(is_min) %>%
-    group_by(sample_name) %>% 
-    mutate(keep = time_minutes == min(time_minutes))
-  
-  x %>% 
-    filter(!is.na(location)) %>%
-    filter(location != "water") %>% 
-    ggplot(aes(x = time_minutes, y = do_slope2, color = sample_name))+
-    geom_line(show.legend = F)+
-    labs(#title = "Time to Anoxia",
-      x = "Elapsed time, minutes",
-      #y = "Dissolved oxygen, mg/L"
-    )+
-    facet_wrap(~timepoint+sample_name, ncol = 5)+
-    #  theme(legend.position = "none")+
-    NULL
   
 }
 
