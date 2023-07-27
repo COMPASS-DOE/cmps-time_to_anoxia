@@ -1,17 +1,14 @@
 # TIME TO ANOXIA
-
-## 0b-initial_processing.R
-## Use this script to download data and metadata files from Google Drive.
+# COMPASS-FME, Kaizad F. Patel
+# 
+# file: "0b-initial_processing.R"
+# Use this script to download data and metadata files from Google Drive.
 
 ## KFP, August 2022
 
 ######################## ####
 ######################## ####
 
-# load packages -----------------------------------------------------------
-source("2-code/0-packages.R")
-
-#
 # download sample metadata files ----------------------------------------------
 ## sample key --------------------------------------------------------------
 ## load and clean sample key

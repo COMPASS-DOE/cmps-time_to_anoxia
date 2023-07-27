@@ -1,8 +1,18 @@
+# TIME TO ANOXIA
+# COMPASS-FME
 
+## 2-functions_analysis.R
+## Use this script to for graphs and analysis
 
+## KFP, August 2022
+
+######################## ####
+######################## ####
+
+# set color palette ----
 pal_horizons = soilpalettes::soil_palette("eutrostox", 2)
 
-
+#
 # OPTODES ----
 plot_optode_data_all_samples = function(optode_data_processed){
   

@@ -1,3 +1,14 @@
+# TIME TO ANOXIA
+# COMPASS-FME
+
+## 0-packages.R
+## This R script contains packages and themes needed for the project.
+
+## KFP, August 2022
+
+######################## ####
+######################## ####
+
 library(tidyverse)
 library(googlesheets4)
 
