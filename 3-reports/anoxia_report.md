@@ -48,6 +48,16 @@ centrifuged and filtered, and analyzed for dissolved nutrients
 
 ![](anoxia_report_files/figure-gfm/pH-1.png)<!-- -->
 
+## Substrate induced respiration
+
+![](anoxia_report_files/figure-gfm/sir_cal_curve-1.png)<!-- -->
+
+| type         | biomass_ug_100g |
+|:-------------|----------------:|
+| Transition-A |       14.020173 |
+| Upland-A     |        9.358146 |
+| Upland-B     |        3.945775 |
+
 ## Field data (Aqua TROLL)
 
 Version 1
@@ -63,7 +73,7 @@ Version 2
 Session Info
 </summary>
 
-Date run: 2023-05-01
+Date run: 2023-07-27
 
     ## R version 4.2.1 (2022-06-23)
     ## Platform: x86_64-apple-darwin17.0 (64-bit)

@@ -53,6 +53,17 @@ tar_read(gg_pH)
 
 
 
+## Substrate induced respiration
+
+```{r, sir_cal_curve, fig.height=7, fig.width=7}
+tar_read(gg_sir_calcurve)
+```
+
+```{r, sir_biomass}
+tar_read(sir_biomass) %>% knitr::kable()
+```
+
+
 ## Field data (Aqua TROLL)
 
 Version 1

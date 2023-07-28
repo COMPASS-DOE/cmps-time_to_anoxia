@@ -21,6 +21,7 @@ source("2-code/0b-initial_processing.R")
 source("2-code/1-functions_processing.R")
 source("2-code/2-functions_analysis.R")
 source("2-code/3-functions_field_data.R")
+source("2-code/4-functions_sir.R")
 
 # list of targets
 list(
@@ -45,6 +46,14 @@ list(
   tar_target(weoc_data, import_weoc_data(FILEPATH = "1-data/npoc", PATTERN = "Summary")),
   tar_target(weoc_processed, process_weoc(weoc_data, analysis_key, dry_weight)),
   tar_target(gg_weoc, plot_weoc(weoc_processed, sample_key)),
+  
+  # SIR
+  tar_target(sir_data, read_sheet("1aKSpp3FVN90XfWjUt-P2Zwtcokhos1g3KzMpsnjfPls", sheet = "egm") %>% 
+               mutate_all(as.character)),
+  tar_target(sir_data_processed, process_sir(sir_data)),
+  tar_target(gg_sir_calcurve, plot_sir_cal_curve(sir_data_processed)),
+  tar_target(sir_biomass, compute_sir_biomass(sir_data_processed)),
+  
   
   # ions
   tar_target(ions_raw, import_ions_data(FILEPATH = "1-data/ions/")),
