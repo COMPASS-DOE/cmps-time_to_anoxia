@@ -40,7 +40,7 @@
 "anoxia_039","OWC","wetland-A","wetland","A","MQ-water","12-hour",
 "anoxia_040","OWC","wetland-A","wetland","A","MQ-water","12-hour",
 "anoxia_041","OWC","wetland-A","wetland","A","MQ-water","12-hour",
-"anoxia_042","OWC","blank-filter",,,"MQ-water","12-hour",
+"anoxia_042","OWC","blank-filter",,,"MQ-water","12-hour","skip"
 "anoxia_043","OWC","upland-A","upland","A","MQ-water","24-hour","skip optode"
 "anoxia_044","OWC","upland-A","upland","A","MQ-water","24-hour","skip optode"
 "anoxia_045","OWC","upland-A","upland","A","MQ-water","24-hour",
