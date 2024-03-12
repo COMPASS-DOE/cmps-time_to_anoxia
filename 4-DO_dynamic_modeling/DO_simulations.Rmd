@@ -45,7 +45,7 @@ plot(output1$time,output1$Oxy, type = "l", main="Microbial uptake rate",xlab = "
 # Fitting observational data with linear model (abiotic)
 ```{r abiotic}
 
-raw<-read.csv("DO_dynamic_modeling/wetlandA.csv",header=TRUE)
+raw<-read.csv("4-DO_dynamic_modeling/wetlandA.csv",header=TRUE)
 sub1<-raw[raw$sample_name =='anoxia_062',]
 Data<-sub1[, c("time_hour","DO_corrected_mgL")]
 colnames(Data)<-c("time","Oxy")
@@ -119,7 +119,7 @@ colnames(final)<-c("time","DO1","DO2","DO3")
 write.csv(final, "wetA_ABO.csv")
 
 
-raw<-read.csv("DO_dynamic_modeling/wetlandA.csv",header=TRUE)
+raw<-read.csv("4-DO_dynamic_modeling/wetlandA.csv",header=TRUE)
 pdf("wetA_ABO.pdf", width=3.4, height=3.6)
 plot(raw$time_hour,raw$DO_corrected_mgL, xlab = "Time (h)", ylab = "DO (mg/L)", pch=1, cex=1.2,col="#fdb863", xlim=c(0,25), ylim=c(0,10),cex.lab=1.2, cex.axis=1.2)
 lines(output1$time, output1$Oxy, lty=3,lwd=2, col="#7f3b08")
@@ -137,7 +137,7 @@ dev.off()
 ## fitting observational data with nonlinear model. Note: 3 replicates for each soil, replicates are fitted independently
 ```{r data_fitting}
 ##load data
-raw<-read.csv("DO_dynamic_modeling/uplandA.csv",header=TRUE)
+raw<-read.csv("4-DO_dynamic_modeling/uplandA.csv",header=TRUE)
 sub1<-raw[raw$sample_name =='anoxia_047',]
 Data<-sub1[, c("time_hour","DO_corrected_mgL")]
 colnames(Data)<-c("time","Oxy")
