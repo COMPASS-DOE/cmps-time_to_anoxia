@@ -169,6 +169,8 @@ plot_optode_data = function(optode_data_processed){
     #geom_smooth(se = F)+
     facet_grid(. ~ transect)+
     theme(legend.position = "none") +
+    theme(legend.text = element_text(size = 14),
+          legend.title = element_text(size = 14))+
     NULL
   
   version2_gg_2wk = 
@@ -187,18 +189,29 @@ plot_optode_data = function(optode_data_processed){
     labs(#title = "Time to Anoxia",
       x = "Elapsed time, days",
       y = "Dissolved oxygen, mg/L")+
-    facet_grid(. ~ transect)+
+    #facet_grid(. ~ transect)+
     theme(legend.position = "none")  +
     NULL
   
+  legend <- 
+    cowplot::get_legend(
+    version2_gg_2wk + 
+      guides(color = guide_legend(nrow = 1)) +
+      theme(legend.position = "top",
+            legend.text = element_text(size = 14),
+            legend.title = element_text(size = 14)))
+    
+    
   version2 = cowplot::plot_grid(version2_gg_24hr + ggtitle("A: 24-hour"), 
                                 version2_gg_2wk + ggtitle("B: 2-week (upland only) \n"), 
-                     rel_widths = c(2.7,1.5),
+                     rel_widths = c(2.7,1.1),
                      label_y = 1,
                      label_x = 0)
   
+  version2_legend = cowplot::plot_grid(legend, version2, nrow = 2, rel_heights = c(0.1, 1))
+  
   list(version1 = version1,
-       version2 = version2)
+       version2_legend = version2_legend)
   
 }
 
